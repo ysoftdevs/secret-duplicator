@@ -1,0 +1,19 @@
+image:
+  registry: ghcr.io/ysoftdevs/secret-duplicator
+  repository: secret-duplicator
+  pullPolicy: Always
+  # Overrides the image tag whose default is the chart appVersion.
+  tag: ""
+
+certificateGeneratorImage:
+  registry: ghcr.io/ysoftdevs/secret-duplicator
+  repository: webhook-cert-generator
+  tag: ""
+
+secretDuplicator:
+  targetSecretName: "dashboard-terminal-kube-apiserver-tls"
+  targetSecretAnnotation: "reflector.v1.k8s.emberstack.com/reflects=cert-manager/default-cert"
+  excludeNamespaces:
+    - kube-system
+    - traefik
+    - datadog

@@ -1,0 +1,25 @@
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingWebhookConfiguration
+metadata:
+  name: secret-duplicator-webhook-cfg
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: secret-duplicator
+    {{- include "secret-duplicator.labels" . | nindent 4 }}
+webhooks:
+- name: secret-duplicator.ysoftdevs.github.com
+  clientConfig:
+    service:
+      name: {{ include "secret-duplicator.serviceName" . }}
+      namespace : {{ .Release.Namespace }}
+      path: "/mutate"
+    caBundle: {{ include "secret-duplicator.lookupCaBundle" . }}
+  rules:
+  - operations: ["CREATE", "UPDATE"]
+    apiGroups: [""]
+    apiVersions: ["v1"]
+    resources: ["serviceaccounts"]
+  admissionReviewVersions: ["v1", "v1beta1"]
+  sideEffects: None
+  # The default "Fail" option prevents Gardener cluster to be hibernated
+  failurePolicy: Ignore

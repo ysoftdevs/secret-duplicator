@@ -1,0 +1,34 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "{{ .Release.Name }}-cert-gen-job"
+  labels:
+    {{- include "secret-duplicator.labels" . | nindent 4 }}
+spec:
+  ttlSecondsAfterFinished: 30
+  template:
+    spec:
+      serviceAccountName: secret-duplicator-cert-gen
+      restartPolicy: Never
+      containers:
+        - name: pre-install-job
+          image: "{{ .Values.certificateGeneratorImage.registry }}/{{ .Values.certificateGeneratorImage.repository }}:{{ .Values.certificateGeneratorImage.tag | default .Chart.AppVersion }}"
+          command: ["/entrypoint/entrypoint.sh"]
+          args:
+            - --service
+            - "{{ include "secret-duplicator.serviceName" . }}"
+            - --namespace
+            - "{{ .Release.Namespace }}"
+            - --secret
+            - "{{ include "secret-duplicator.certificateSecretName" . }}"
+          volumeMounts:
+            - mountPath: "/entrypoint"
+              name: entrypoint
+      volumes:
+        - name: entrypoint
+          configMap:
+            name: secret-duplicator-cert-gen-entrypoint
+            items:
+              - key: entrypoint.sh
+                path: entrypoint.sh
+                mode: 0755

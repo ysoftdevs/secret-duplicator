@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: secret-duplicator-webhook-deployment
+  namespace : {{ .Release.Namespace }}
+  labels:
+    app: secret-duplicator
+    {{- include "secret-duplicator.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: secret-duplicator
+  template:
+    metadata:
+      labels:
+        app: secret-duplicator
+    spec:
+      serviceAccountName: secret-duplicator
+      containers:
+        - name: secret-duplicator
+          image: "{{ .Values.image.registry }}/{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: IfNotPresent
+          args:
+          - -alsologtostderr
+          - -v=4
+          - 2>&1
+          env:
+            - name: CONFIG_PORT
+              value: "8443"
+            - name: CONFIG_CERT_PATH
+              value: "/etc/webhook/certs/cert.pem"
+            - name: CONFIG_KEY_PATH
+              value: "/etc/webhook/certs/key.pem"
+            - name: CONFIG_EXCLUDE_NAMESPACES
+              value: {{ join "," .Values.secretDuplicator.excludeNamespaces | quote }}
+            - name: CONFIG_TARGET_SECRET_NAME
+              value: {{ .Values.secretDuplicator.targetSecretName | quote }}
+            - name: CONFIG_TARGET_SECRET_ANNOTATION
+              value: {{ .Values.secretDuplicator.targetSecretAnnotation | quote }}
+          volumeMounts:
+          - name: webhook-certs
+            mountPath: /etc/webhook/certs
+            readOnly: true
+      volumes:
+      - name: webhook-certs
+        secret:
+          secretName: {{ include "secret-duplicator.certificateSecretName" . }}

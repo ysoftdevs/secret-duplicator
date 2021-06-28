@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "secret-duplicator.serviceName" . }}
+  namespace : {{ .Release.Namespace }}
+  labels:
+    app: secret-duplicator
+    {{- include "secret-duplicator.labels" . | nindent 4 }}
+spec:
+  ports:
+  - port: 443
+    targetPort: 8443
+  selector: {{ include "secret-duplicator.selectorLabels" . | nindent 4 }}
