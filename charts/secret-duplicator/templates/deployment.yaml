@@ -13,14 +13,14 @@ spec:
       app: secret-duplicator
   template:
     metadata:
-      labels:
+      labels: {{- include "secret-duplicator.labels" . | nindent 8 }}
         app: secret-duplicator
     spec:
       serviceAccountName: secret-duplicator
       containers:
         - name: secret-duplicator
           image: "{{ .Values.image.registry }}/{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           args:
           - -alsologtostderr
           - -v=4

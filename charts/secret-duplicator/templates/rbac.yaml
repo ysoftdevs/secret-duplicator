@@ -18,7 +18,6 @@ rules:
       - ""
     resources:
       - secrets
-      - serviceaccounts
     verbs:
       - list
       - patch

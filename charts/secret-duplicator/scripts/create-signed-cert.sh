@@ -46,7 +46,7 @@ while [[ $# -gt 0 ]]; do
     shift
 done
 
-[ -z "${service}" ] && service=ips-injector-svc
+[ -z "${service}" ] && service=secret-duplicator-svc
 [ -z "${secret}" ] && secret=descret-duplicator-webhook-certs
 [ -z "${namespace}" ] && namespace=secret-duplicator
 

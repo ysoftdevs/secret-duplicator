@@ -57,4 +57,4 @@ Of note is also a fact that the chart runs a lookup to the connected cluster to 
     The `get` command should display _some_ non-empty result.
 
 ## Releasing locally
-To authenticate to the docker registry to push the images manually, you will need your own Github Personal Access Token. For more information follow this guide https://docs.github.com/en/packages/guides/migrating-to-github-container-registry-for-docker-images#authenticating-with-the-container-registry
+To authenticate to the docker registry to push the images manually, you will need your own Github Personal Access Token. For more information follow this guide https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry#authenticating-to-the-container-registry

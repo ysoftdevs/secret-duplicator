@@ -7,7 +7,7 @@ Expand the name of the chart.
 {{- end }}
 
 {{- define "secret-duplicator.serviceName" -}}
-ips-injector-svc
+secret-duplicator-svc
 {{- end }}
 
 {{- define "secret-duplicator.certificateSecretName" -}}

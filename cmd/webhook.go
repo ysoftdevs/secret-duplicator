@@ -7,6 +7,7 @@ import (
 	"k8s.io/apimachinery/pkg/api/errors"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/golang/glog"
 	"k8s.io/api/admission/v1beta1"
@@ -47,10 +48,6 @@ var (
 		metav1.NamespaceSystem,
 		metav1.NamespacePublic,
 	}
-
-	defaultServiceAccounts = []string{
-		"default",
-	}
 )
 
 // NewWebhookServer constructor for WebhookServer
@@ -86,12 +83,6 @@ func DefaultParametersObject() WhSvrParameters {
 	}
 }
 
-type patchOperation struct {
-	Op    string      `json:"op"`
-	Path  string      `json:"path"`
-	Value interface{} `json:"value,omitempty"`
-}
-
 func init() {
 	_ = corev1.AddToScheme(runtimeScheme)
 	_ = admissionregistrationv1beta1.AddToScheme(runtimeScheme)
@@ -100,66 +91,25 @@ func init() {
 	_ = v1.AddToScheme(runtimeScheme)
 }
 
-func addImagePullSecret(target, added []corev1.LocalObjectReference, basePath string) (patch []patchOperation) {
-	first := len(target) == 0
-	var value interface{}
-	for _, add := range added {
-		value = add
-		path := basePath
-		if first {
-			first = false
-			value = []corev1.LocalObjectReference{add}
-		} else {
-			path = path + "/-"
-		}
-		patch = append(patch, patchOperation{
-			Op:    "add",
-			Path:  path,
-			Value: value,
-		})
-	}
-	return patch
-}
+// createSecret makes sure the target secret exists and contains annotations
+func (whsvr *WebhookServer) createSecret(targetNamespace string) {
+	glog.Infof("Will wait 10sec before create secrets")
+	time.Sleep(time.Second * 10)
+	glog.Infof("Will create secrets now")
 
-// ensureSecrets looks up the target secret and makes sure the target secret exists and contains annotations
-func (whsvr *WebhookServer) ensureSecrets(ar *v1beta1.AdmissionReview) error {
-	glog.Infof("Ensuring existing secrets")
-	targetNamespace := ar.Request.Namespace
-
-	glog.Infof("Looking for the existing target secret")
-	secret, err := whsvr.client.CoreV1().Secrets(targetNamespace).Get(whsvr.config.targetSecretName, metav1.GetOptions{})
-	if err != nil && !errors.IsNotFound(err) {
-		glog.Errorf("Could not fetch secret %s in namespace %s: %v", whsvr.config.targetSecretName, targetNamespace, err)
-		return err
-	}
-
-	if err != nil && errors.IsNotFound(err) {
-		glog.Infof("Target secret not found, creating a new one")
-		if _, createErr := whsvr.client.CoreV1().Secrets(targetNamespace).Create(&corev1.Secret{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      whsvr.config.targetSecretName,
-				Namespace: targetNamespace,
-			},
-			Data: nil,
-			Type: corev1.SecretTypeOpaque,
-		}); createErr != nil {
-			glog.Errorf("Could not create secret %s in namespace %s: %v", whsvr.config.targetSecretName, targetNamespace, err)
-			return err
-		}
-		glog.Infof("Target secret created successfully")
-		return nil
-	}
-
-	glog.Infof("Target secret found, updating")
 	annotationData := strings.Split(whsvr.config.targetSecretAnnotation, "=")
-	secret.Annotations[annotationData[0]] = annotationData[1]
-	if _, err := whsvr.client.CoreV1().Secrets(targetNamespace).Update(secret); err != nil {
-		glog.Errorf("Could not update secret %s in namespace %s: %v", whsvr.config.targetSecretName, targetNamespace, err)
-		return err
+	if _, createErr := whsvr.client.CoreV1().Secrets(targetNamespace).Create(&corev1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:        whsvr.config.targetSecretName,
+			Namespace:   targetNamespace,
+			Annotations: map[string]string{annotationData[0]: annotationData[1]},
+		},
+		Data: nil,
+		Type: corev1.SecretTypeOpaque,
+	}); createErr != nil {
+		glog.Errorf("Could not create secret %s in namespace %s: %v", whsvr.config.targetSecretName, targetNamespace, createErr)
 	}
-	glog.Infof("Target secret updated successfully")
-
-	return nil
+	glog.Infof("Target secret created successfully")
 }
 
 // shouldMutate goes through all filters and determines whether the incoming NS matches them
@@ -196,42 +146,8 @@ func (whsvr *WebhookServer) mutateNamespace(ar *v1beta1.AdmissionReview) *v1beta
 			Allowed: true,
 		}
 	}
-	secretList, err := whsvr.client.CoreV1().Secrets(ns.Name).List(metav1.ListOptions{
-		Watch: false,
-	})
-	if err != nil {
-		glog.Errorf("Could not get secret from namespace: %v", err)
-		return &v1beta1.AdmissionResponse{
-			Result: &metav1.Status{
-				Message: err.Error(),
-			},
-		}
-	}
 
-	// Check whether we already have configured secret with annotation present
-	if secretList != nil {
-		for _, item := range secretList.Items {
-			if item.Name == whsvr.config.targetSecretName {
-				annotationToCheck := strings.Split(whsvr.config.targetSecretAnnotation, "=")
-				if val, ok := item.Annotations[annotationToCheck[0]]; ok {
-					glog.Infof("Namespace is already in the correct state and contains secret %s with value %s=%s, skipping", whsvr.config.targetSecretName, annotationToCheck, val)
-					return &v1beta1.AdmissionResponse{
-						Allowed: true,
-					}
-				}
-			}
-		}
-	}
-
-	if err := whsvr.ensureSecrets(ar); err != nil {
-		glog.Errorf("Could not ensure existence of the secret")
-		glog.Errorf("Failing the mutation process")
-		return &v1beta1.AdmissionResponse{
-			Result: &metav1.Status{
-				Message: err.Error(),
-			},
-		}
-	}
+	go whsvr.createSecret(ar.Request.Name)
 
 	return &v1beta1.AdmissionResponse{
 		Allowed:   true,

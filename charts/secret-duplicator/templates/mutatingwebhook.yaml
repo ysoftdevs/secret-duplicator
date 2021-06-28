@@ -15,11 +15,14 @@ webhooks:
       path: "/mutate"
     caBundle: {{ include "secret-duplicator.lookupCaBundle" . }}
   rules:
-  - operations: ["CREATE", "UPDATE"]
+  - operations: ["CREATE"]
     apiGroups: [""]
     apiVersions: ["v1"]
-    resources: ["serviceaccounts"]
+    resources: ["namespaces"]
   admissionReviewVersions: ["v1", "v1beta1"]
+  namespaceSelector:
+    matchLabels:
+      gardener.cloud/role: shoot
   sideEffects: None
   # The default "Fail" option prevents Gardener cluster to be hibernated
   failurePolicy: Ignore
