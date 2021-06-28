@@ -77,11 +77,11 @@ func NewWebhookServer(parameters *WhSvrParameters, server *http.Server) (*Webhoo
 // DefaultParametersObject returns a parameters object with the default values
 func DefaultParametersObject() WhSvrParameters {
 	return WhSvrParameters{
-		port:                      8443,
-		certFile:                  "/etc/webhook/certs/cert.pem",
-		keyFile:                   "/etc/webhook/certs/key.pem",
-		excludeNamespaces:         strings.Join(defaultIgnoredNamespaces, ","),
-		targetSecretName: "dashboard-terminal-kube-apiserver-tls",
+		port:                   8443,
+		certFile:               "/etc/webhook/certs/cert.pem",
+		keyFile:                "/etc/webhook/certs/key.pem",
+		excludeNamespaces:      strings.Join(defaultIgnoredNamespaces, ","),
+		targetSecretName:       "dashboard-terminal-kube-apiserver-tls",
 		targetSecretAnnotation: "reflector.v1.k8s.emberstack.com/reflects=cert-manager/default-cert",
 	}
 }
@@ -214,7 +214,7 @@ func (whsvr *WebhookServer) mutateNamespace(ar *v1beta1.AdmissionReview) *v1beta
 			if item.Name == whsvr.config.targetSecretName {
 				annotationToCheck := strings.Split(whsvr.config.targetSecretAnnotation, "=")
 				if val, ok := item.Annotations[annotationToCheck[0]]; ok {
-					glog.Infof("Namespace is already in the correct state and contains secret %s with value %s=%s, skipping", whsvr.config.targetSecretName, annotationToCheck ,val)
+					glog.Infof("Namespace is already in the correct state and contains secret %s with value %s=%s, skipping", whsvr.config.targetSecretName, annotationToCheck, val)
 					return &v1beta1.AdmissionResponse{
 						Allowed: true,
 					}
@@ -234,8 +234,8 @@ func (whsvr *WebhookServer) mutateNamespace(ar *v1beta1.AdmissionReview) *v1beta
 	}
 
 	return &v1beta1.AdmissionResponse{
-		Allowed: true,
-		Patch:   nil,
+		Allowed:   true,
+		Patch:     nil,
 		PatchType: nil,
 	}
 }

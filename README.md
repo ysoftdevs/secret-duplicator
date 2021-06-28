@@ -2,9 +2,9 @@
 
 The responsibility of this webhook is to patch all newly created/updated namespaces so that they contain predefined empty secret with given annotation. 
 
-This repo produces one helm chart available via helm repository https://ysoftdevs.github.io/imagepullsecret-injector. There are also 2 docker images:
-- `ghcr.io/ysoftdevs/imagepullsecret-injector/imagepullsecret-injector` - the image containing the webhook itself
-- `ghcr.io/ysoftdevs/imagepullsecret-injector/webhook-cert-generator` - helper image responsible for (re)generating the certificates
+This repo produces one helm chart available via helm repository https://ysoftdevs.github.io/secret-duplicator. There are also 2 docker images:
+- `ghcr.io/ysoftdevs/secret-duplicator/secret-duplicator` - the image containing the webhook itself
+- `ghcr.io/ysoftdevs/secret-duplicator/webhook-cert-generator` - helper image responsible for (re)generating the certificates
 
 ## Helm description
 The helm chart consists of 2 parts: the certificate generator and the webhook configuration itself.
@@ -26,9 +26,9 @@ Of note is also a fact that the chart runs a lookup to the connected cluster to 
 ## Running locally
 1. Create the prerequisite resources:
     ```bash
-    kubectl create ns secret-replicator
+    kubectl create ns secret-duplicator
 
-    kubectl create secret -n secret-replicator \
+    kubectl create secret -n secret-duplicator \
         generic acr-dockerconfigjson-source \
         --type=kubernetes.io/dockerconfigjson \
         --from-literal=.dockerconfigjson='<your .dockerconfigjson configuration file>'
@@ -37,17 +37,17 @@ Of note is also a fact that the chart runs a lookup to the connected cluster to 
 1. Build the images and run the chart
     ``` bash
     make build-image
-    helm upgrade -i secret-replicator \
-        -n secret-replicator \
-        charts/secret-replicator
+    helm upgrade -i secret-duplicator \
+        -n secret-duplicator \
+        charts/secret-duplicator
     ```
     Alternatively, you can use the pre-built, publicly available helm chart and docker images:
     ```bash
-    helm repo add secret-replicator https://ysoftdevs.github.io/secret-replicator
+    helm repo add secret-duplicator https://ysoftdevs.github.io/secret-duplicator
     helm repo update
-    helm upgrade -i secret-replicator \
-        -n secret-replicator \
-        secret-replicator/secret-replicator
+    helm upgrade -i secret-duplicator \
+        -n secret-duplicator \
+        secret-duplicator/secret-duplicator
     ```
 
 1. To test whether everything works, you can run
