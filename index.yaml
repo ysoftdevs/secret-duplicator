@@ -1,0 +1,14 @@
+apiVersion: v1
+entries:
+  secret-duplicator:
+  - apiVersion: v2
+    appVersion: 0.0.1
+    created: "2021-06-29T10:42:40.73371824Z"
+    description: A Helm chart for Kubernetes
+    digest: d8fc7a5f78b768b5e8d74ebae387c19024e75a93c696815462620621ead31dfc
+    name: secret-duplicator
+    type: application
+    urls:
+    - https://github.com/ysoftdevs/secret-duplicator/releases/download/secret-duplicator-0.0.2/secret-duplicator-0.0.2.tgz
+    version: 0.0.2
+generated: "2021-06-29T10:42:40.73372424Z"
