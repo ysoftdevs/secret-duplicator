@@ -24,24 +24,24 @@ jobs:
         with:
           version: v3.4.0
 
-      - name: Helm version checker
-        id: helm_version_checker
-        continue-on-error: true
-        run: |
-          helm repo add secret-duplicator https://ysoftdevs.github.io/secret-duplicator
-          helm repo update
-
-          newVersion="$(helm show chart helm/secret-duplicator | grep version: | awk '{print $2}')"
-          echo "Trying to upload version $newVersion"
-          uploadedVersions="$(helm search repo secret-duplicator/secret-duplicator -l | tail -n +2 | awk '{print $2}')"
-          echo "Found these versions in upstream: $uploadedVersions"
-          for uploadedVersion in $uploadedVersions; do
-            if [ "$newVersion" == "$uploadedVersion" ]; then
-              echo "Found a matching version in upstream, failing this task and skipping the release"
-              exit 1
-            fi
-          done
-          echo "No matching version found, running the release"
+#      - name: Helm version checker
+#        id: helm_version_checker
+#        continue-on-error: true
+#        run: |
+#          helm repo add secret-duplicator https://ysoftdevs.github.io/secret-duplicator
+#          helm repo update
+#
+#          newVersion="$(helm show chart helm/secret-duplicator | grep version: | awk '{print $2}')"
+#          echo "Trying to upload version $newVersion"
+#          uploadedVersions="$(helm search repo secret-duplicator/secret-duplicator -l | tail -n +2 | awk '{print $2}')"
+#          echo "Found these versions in upstream: $uploadedVersions"
+#          for uploadedVersion in $uploadedVersions; do
+#            if [ "$newVersion" == "$uploadedVersion" ]; then
+#              echo "Found a matching version in upstream, failing this task and skipping the release"
+#              exit 1
+#            fi
+#          done
+#          echo "No matching version found, running the release"
 
       - name: Run chart-releaser
         if: steps.helm_version_checker.outcome == 'success'
